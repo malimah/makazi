@@ -1,0 +1,101 @@
+import React from 'react';
+import { StyleSheet, Dimensions, View, Platform, Linking, Alert } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { Property } from '../../types';
+import { PropertyMapProps } from './PropertyMap';
+
+export default function PropertyMap({ properties, onMarkerPress }: PropertyMapProps) {
+  const openDirections = async (property: Property) => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is required for navigation.');
+        return;
+      }
+
+      const userLocation = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = property.coordinates;
+      
+      const scheme = Platform.select({
+        ios: 'maps:',
+        android: 'geo:',
+      });
+
+      const latLng = `${latitude},${longitude}`;
+      const label = property.title;
+      
+      const url = Platform.select({
+        ios: `${scheme}${latLng}?q=${label}`,
+        android: `${scheme}${latLng}?q=${label}`,
+      });
+
+      const supported = await Linking.canOpenURL(url!);
+      if (supported) {
+        await Linking.openURL(url!);
+      } else {
+        Alert.alert('Error', 'Unable to open navigation.');
+      }
+    } catch (error) {
+      console.error('Error opening directions:', error);
+      Alert.alert('Error', 'Failed to open navigation.');
+    }
+  };
+
+  // Calculate the initial region based on the first property or default to Tanzania
+  const initialRegion = properties.length > 0
+    ? {
+        latitude: properties[0].coordinates.latitude,
+        longitude: properties[0].coordinates.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      }
+    : {
+        latitude: -6.776012, // Tanzania
+        longitude: 39.178326,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={initialRegion}
+      >
+        {properties.map((property) => (
+          <Marker
+            key={property.$id}
+            coordinate={{
+              latitude: property.coordinates.latitude,
+              longitude: property.coordinates.longitude,
+            }}
+            title={property.title}
+            description={property.location}
+            onCalloutPress={() => {
+              if (onMarkerPress) {
+                onMarkerPress(property);
+              } else {
+                openDirections(property);
+              }
+            }}
+          />
+        ))}
+      </MapView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    height: 300,
+    width: '100%',
+    marginVertical: 10,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  map: {
+    flex: 1,
+  },
+}); 
