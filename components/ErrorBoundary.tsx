@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import * as Sentry from 'sentry-expo';
 
 interface Props {
   children: React.ReactNode;
@@ -22,7 +23,9 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to your error reporting service
+    // Send error to Sentry
+    Sentry.Native.captureException(error);
+    // Log error to console
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 

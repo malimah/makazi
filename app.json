@@ -27,10 +27,28 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "sentry-expo",
+        {
+          "organization": "makazi-c0",
+          "project": "makazi"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "hooks": {
+      "postPublish": [
+        {
+          "file": "sentry-expo/upload-sourcemaps",
+          "config": {
+            "organization": "makazi-c0",
+            "project": "makazi"
+          }
+        }
+      ]
     }
   }
 }
