@@ -11,6 +11,7 @@ import {
 import { RoomFeature } from '../utils/roomPlanningUtils';
 import ImageUpload from './ImageUpload';
 import { Picker } from '@react-native-picker/picker';
+import RoomFeatureEditor from './RoomFeatureEditor';
 
 interface PropertyFormData {
   title: string;
@@ -69,6 +70,10 @@ export default function PropertyForm({ onSubmit, initialValues = {} }: PropertyF
       return;
     }
     onSubmit(form);
+  };
+
+  const handleFeaturesChange = (features: RoomFeature[]) => {
+    setForm({ ...form, features });
   };
 
   const renderPropertyTypePicker = () => {

@@ -1,4 +1,4 @@
-import { Client, Account, ID, Databases, Storage, Permission, Role, Query } from 'react-native-appwrite';
+import { Client, Account, ID, Databases, Storage, Permission, Role, Query, Models } from 'react-native-appwrite';
 
 // Ensure we're using the environment variables
 const client = new Client()
@@ -23,7 +23,7 @@ const STORAGE_BUCKET_ID = '682b32c2003a04448deb';
 
 // Storage helper functions
 export const storageAPI = {
-  uploadFile: async (file: File, permissions: string[] = ['*']) => {
+  uploadFile: async (file: File, onProgress?: (progress: number) => void) => {
     try {
       console.log('Preparing to upload file:', {
         size: file.size,
@@ -31,14 +31,46 @@ export const storageAPI = {
         name: file.name
       });
 
-      // Direct file upload without bucket check
-      const uploadedFile = await storage.createFile(
-        STORAGE_BUCKET_ID,
-        ID.unique(),
-        file,
-        ['*']  // Allow read access to all users
-      );
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File size exceeds 10MB limit');
+      }
 
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Invalid file type. Only images are allowed');
+      }
+
+      // Create a custom upload function that tracks progress
+      const uploadWithProgress = async () => {
+        try {
+          // Create file with proper permissions
+          const uploadedFile = await storage.createFile(
+            STORAGE_BUCKET_ID,
+            ID.unique(),
+            file,
+            ['read("any")']  // Simple read permission for anyone
+          );
+
+          // Simulate progress since we can't track actual progress with the SDK
+          if (onProgress) {
+            onProgress(30);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            onProgress(60);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            onProgress(90);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            onProgress(100);
+          }
+
+          return uploadedFile;
+        } catch (error) {
+          console.error('Upload error:', error);
+          throw error;
+        }
+      };
+
+      const uploadedFile = await uploadWithProgress();
       console.log('File uploaded successfully:', uploadedFile);
       return uploadedFile;
     } catch (error: any) {
@@ -46,8 +78,20 @@ export const storageAPI = {
         message: error.message,
         code: error.code,
         type: error.constructor.name,
-        response: error.response
+        response: error.response,
+        status: error.response?.status,
+        statusText: error.response?.statusText
       });
+
+      // Handle specific error cases
+      if (error.code === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.code === 403) {
+        throw new Error('Permission denied. Please check your access rights.');
+      } else if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+
       throw new Error(`File upload failed: ${error.message}`);
     }
   },

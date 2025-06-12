@@ -20,6 +20,7 @@ import PropertyMap from '../components/PropertyMap';
 import WebPropertyMap from '../components/WebPropertyMap';
 import { RoomFeature } from '../utils/roomPlanningUtils';
 import { sortPropertiesByDistance } from '../../utils/distance';
+import UploadProgress from '../components/UploadProgress';
 
 const BUCKET_ID = '682b32c2003a04448deb';
 const DATABASE_ID = '68286dbc002bee374429';
@@ -519,6 +520,9 @@ export default function LandlordDashboard() {
     type: '',
   });
 
+  // Add new state for upload progress
+  const [uploadProgress, setUploadProgress] = useState<{ progress: number; fileName: string; size: string } | null>(null);
+
   // Auto-hide/show sidebars on resize
   useEffect(() => {
     const handleResize = () => {
@@ -832,7 +836,6 @@ export default function LandlordDashboard() {
       let fileObj: File;
       
       if (Platform.OS === 'web') {
-        // For web platform, we already have a File object
         fileObj = asset as File;
         console.log('Web file object:', {
           name: fileObj.name,
@@ -840,34 +843,51 @@ export default function LandlordDashboard() {
           size: fileObj.size
         });
 
+        // Initialize upload progress
+        setUploadProgress({
+          progress: 0,
+          fileName: fileObj.name,
+          size: `${(fileObj.size / (1024 * 1024)).toFixed(2)} MB`
+        });
+
         // Double-check file type and size
         if (!fileObj.type.startsWith('image/')) {
-          throw new Error('Invalid file type. Please upload an image file.');
+          throw new Error('Please upload an image file (JPEG, PNG, etc.)');
         }
-        if (fileObj.size > 10 * 1024 * 1024) { // 10MB limit
-          throw new Error('File size too large. Please upload an image smaller than 10MB.');
+        if (fileObj.size > 10 * 1024 * 1024) {
+          throw new Error('Image size is too large. Please upload an image smaller than 10MB.');
         }
       } else {
-        // For native platforms, we need to create a File object
         const imageAsset = asset as ImagePicker.ImagePickerAsset;
         console.log('Native image asset:', imageAsset);
 
-        const response = await fetch(imageAsset.uri);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+        try {
+          const response = await fetch(imageAsset.uri);
+          if (!response.ok) {
+            throw new Error(`Failed to process image: ${response.status} ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          console.log('Native blob:', {
+            size: blob.size,
+            type: blob.type
+          });
+          
+          const fileName = `property_${Date.now()}_${Math.random().toString(36).slice(2, 11)}.jpg`;
+          fileObj = new File([blob], fileName, {
+            type: 'image/jpeg'
+          });
+
+          // Initialize upload progress for native platforms
+          setUploadProgress({
+            progress: 0,
+            fileName: fileName,
+            size: `${(blob.size / (1024 * 1024)).toFixed(2)} MB`
+          });
+        } catch (fetchError) {
+          console.error('Error processing image:', fetchError);
+          throw new Error('Failed to process the selected image. Please try another image.');
         }
-        
-        const blob = await response.blob();
-        console.log('Native blob:', {
-          size: blob.size,
-          type: blob.type
-        });
-        
-        // Create a File object with a unique name
-        const fileName = `property_${Date.now()}_${Math.random().toString(36).slice(2, 11)}.jpg`;
-        fileObj = new File([blob], fileName, {
-          type: 'image/jpeg'
-        });
       }
 
       console.log('Uploading file:', {
@@ -876,23 +896,51 @@ export default function LandlordDashboard() {
         size: fileObj.size
       });
 
-      // Upload file using storageAPI
-      const uploadedFile = await storageAPI.uploadFile(fileObj);
+      // Upload file using storageAPI with progress tracking
+      const uploadedFile = await storageAPI.uploadFile(
+        fileObj,
+        (progress) => {
+          setUploadProgress(prev => prev ? { ...prev, progress } : null);
+        }
+      );
       
       if (!uploadedFile?.$id) {
-        throw new Error('Failed to get file ID after upload');
+        throw new Error('Failed to get file ID after upload. Please try again.');
       }
       
       console.log('Upload successful:', uploadedFile);
+      
+      // Clear progress after successful upload
+      setTimeout(() => {
+        setUploadProgress(null);
+      }, 1000);
+
       return uploadedFile.$id;
     } catch (error: any) {
+      // Clear progress on error
+      setUploadProgress(null);
+
       console.error('Image upload error:', {
         message: error.message,
         code: error.code,
         type: error.constructor.name,
-        stack: error.stack
+        stack: error.stack,
+        response: error.response
       });
-      Alert.alert('Image upload failed', error.message || 'Failed to upload image');
+
+      // Show a more user-friendly error message
+      let errorMessage = 'Failed to upload image. ';
+      if (error.code === 401) {
+        errorMessage += 'Please log in again.';
+      } else if (error.code === 403) {
+        errorMessage += 'You don\'t have permission to upload images.';
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('Network error')) {
+        errorMessage += 'Please check your internet connection and try again.';
+      } else {
+        errorMessage += error.message || 'Please try again.';
+      }
+
+      Alert.alert('Image Upload Failed', errorMessage);
       return null;
     }
   };
@@ -913,6 +961,12 @@ export default function LandlordDashboard() {
       const imageId = await uploadImage(image);
       if (!imageId) return;
 
+      // Format features to match the expected structure
+      const formattedFeatures = features.map(feature => ({
+        name: feature.toString(),
+        value: 'true'
+      }));
+
       const propertyData = {
         title,
         location,
@@ -924,13 +978,22 @@ export default function LandlordDashboard() {
         beds: 0,
         baths: 0,
         guests: 0,
-        dimensions,
-        features,
+        dimensions: {
+          width: dimensions.width,
+          length: dimensions.length,
+          height: dimensions.height
+        },
+        features: formattedFeatures,
         landlordId: user.$id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        coordinates,
+        coordinates: {
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
+        }
       };
+
+      console.log('Creating property with data:', propertyData);
 
       const doc = await databases.createDocument(
         DATABASE_ID,
@@ -938,6 +1001,8 @@ export default function LandlordDashboard() {
         ID.unique(),
         propertyData
       );
+
+      console.log('Property created successfully:', doc);
 
       const newProperty: Property = {
         $id: doc.$id,
@@ -964,6 +1029,7 @@ export default function LandlordDashboard() {
       });
       setShowForm(false);
     } catch (error: any) {
+      console.error('Error creating property:', error);
       Alert.alert('Error saving property', error.message || String(error));
     }
   };
@@ -1157,6 +1223,15 @@ export default function LandlordDashboard() {
             onDelete={handleDeleteProperty}
             getImageUri={getImageUri}
           />
+
+          {/* Upload Progress */}
+          {uploadProgress && (
+            <UploadProgress
+              progress={uploadProgress.progress}
+              fileName={uploadProgress.fileName}
+              size={uploadProgress.size}
+            />
+          )}
 
           {/* Tenant Assignment Section */}
           {selectedPropertyId && (

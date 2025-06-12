@@ -17,6 +17,15 @@ export type Property = {
     latitude: number;
     longitude: number;
   };
+  dimensions: {
+    width: number;
+    length: number;
+    height: number;
+  };
+  features: Array<{
+    name: string;
+    value: string;
+  }>;
 };
 
 export type Tenant = {
