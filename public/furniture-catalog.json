@@ -1,0 +1,46 @@
+[
+  {
+    "id": "bed-single",
+    "name": "Single Bed",
+    "category": "Bedroom",
+    "dimensions": {
+      "width": 0.9,
+      "length": 2,
+      "height": 0.5
+    },
+    "price": "TSh 250,000"
+  },
+  {
+    "id": "sofa-3seater",
+    "name": "3-Seater Sofa",
+    "category": "Living Room",
+    "dimensions": {
+      "width": 2,
+      "length": 0.85,
+      "height": 0.7
+    },
+    "price": "TSh 450,000"
+  },
+  {
+    "id": "dining-table",
+    "name": "Dining Table",
+    "category": "Dining Room",
+    "dimensions": {
+      "width": 1.5,
+      "length": 0.9,
+      "height": 0.75
+    },
+    "price": "TSh 300,000"
+  },
+  {
+    "id": "wardrobe",
+    "name": "Wardrobe",
+    "category": "Bedroom",
+    "dimensions": {
+      "width": 1.2,
+      "length": 0.6,
+      "height": 2
+    },
+    "price": "TSh 400,000"
+  }
+]
