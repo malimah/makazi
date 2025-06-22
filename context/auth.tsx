@@ -46,9 +46,9 @@ export function AuthContextProvider(props: ProviderProps) {
 
       const inAuthGroup = segments[0] === "(auth)";
 
-      // Only redirect to sign-in if not authenticated and not in auth group
+      // Only redirect to welcome page if not authenticated and not in auth group
       if (!user && !inAuthGroup) {
-        router.replace("/sign-in");
+        router.replace("/");
       }
     }, [user, segments, authInitialized]);
   };

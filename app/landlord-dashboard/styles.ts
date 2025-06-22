@@ -188,3 +188,30 @@ export const fabHandleText: TextStyle = {
   lineHeight: 32,
   opacity: 0.95,
 };
+
+// Default export to fix expo-router warning
+export default {
+  root,
+  sidebar,
+  sidebarTitle,
+  sidebarItem,
+  sidebarItemActive,
+  sidebarLabel,
+  logoutItem,
+  logoutLabel,
+  mainContent,
+  container,
+  title,
+  subtitle,
+  profilePicContainer,
+  profilePic,
+  profilePicPlaceholder,
+  form,
+  input,
+  imagePicker,
+  propertyImage,
+  rightSidebar,
+  fabSidebarHandleRight,
+  fabSidebarHandleLeft,
+  fabHandleText,
+};

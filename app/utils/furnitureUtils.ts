@@ -196,4 +196,7 @@ function canPlaceFurniture(
   }
 
   return true;
-} 
+}
+
+// Default export to fix expo-router warning
+export default {}; 

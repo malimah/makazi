@@ -67,4 +67,7 @@ export const getDefaultDimensions = (propertyType: PropertyType): PropertyDimens
   };
   
   return dimensions[propertyType] || { width: 6, length: 8, height: 2.8 };
-}; 
+};
+
+// Default export to fix expo-router warning
+export default {}; 

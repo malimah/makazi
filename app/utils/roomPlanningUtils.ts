@@ -335,4 +335,7 @@ function checkCollision(
     z1 + length1 <= z2 ||
     z2 + length2 <= z1
   );
-} 
+}
+
+// Default export to fix expo-router warning
+export default {}; 

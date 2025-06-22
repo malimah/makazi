@@ -38,4 +38,10 @@ export function sortPropertiesByDistance(
       )
     }))
     .sort((a, b) => a.distance - b.distance);
-} 
+}
+
+// Default export to fix expo-router warning
+export default {
+  calculateDistance,
+  sortPropertiesByDistance,
+}; 

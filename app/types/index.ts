@@ -1,4 +1,5 @@
 import { RoomFeature } from '../utils/roomPlanningUtils';
+import React from 'react';
 
 export interface Property {
   $id: string;
@@ -103,4 +104,9 @@ export interface Analytics {
       pending: number;
     }>;
   };
+}
+
+// Default export to fix expo-router warning
+export default function Types() {
+  return null;
 } 

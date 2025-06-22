@@ -4,7 +4,7 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Property } from '../../types';
 
 // Export the types that both implementations need
-interface PropertyMapProps {
+export interface PropertyMapProps {
   properties: Property[];
   onMarkerPress?: (property: Property) => void;
 }
