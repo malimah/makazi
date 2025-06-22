@@ -25,7 +25,10 @@
     "@react-navigation/native-stack": "^6.9.17",
     "@react-three/drei": "^9.99.0",
     "@react-three/fiber": "^8.15.19",
+<<<<<<< HEAD
     "@sentry/react-native": "^6.15.1",
+=======
+>>>>>>> 07f5fb1884e5e59842ddd2d4f473ffffd327cd6e
     "@types/hls.js": "^0.13.3",
     "@types/three": "^0.160.0",
     "appwrite": "^13.0.1",
@@ -54,8 +57,12 @@
     "react-native-web": "~0.19.10",
     "react-use-measure": "^2.1.7",
     "three": "^0.160.1",
+<<<<<<< HEAD
     "three-stdlib": "^2.36.0",
     "sentry-expo": "~7.2.0"
+=======
+    "three-stdlib": "^2.36.0"
+>>>>>>> 07f5fb1884e5e59842ddd2d4f473ffffd327cd6e
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
