@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7d4c60d015541a4f25748aad69741d4a011bf74c
 // theme.ts
 import { useColorScheme } from "react-native";
 
@@ -26,6 +29,7 @@ export const useTheme = () => {
   const colorScheme = useColorScheme();
   return colorScheme === "dark" ? darkTheme : lightTheme;
 };
+<<<<<<< HEAD
 =======
 // theme.ts
 import { useColorScheme } from "react-native";
@@ -55,3 +59,5 @@ export const useTheme = () => {
   return colorScheme === "dark" ? darkTheme : lightTheme;
 };
 >>>>>>> 07f5fb1884e5e59842ddd2d4f473ffffd327cd6e
+=======
+>>>>>>> 7d4c60d015541a4f25748aad69741d4a011bf74c

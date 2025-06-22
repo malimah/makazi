@@ -36,6 +36,60 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
 
+  // Handle Platform module for web - all possible import paths
+  if (platform === 'web' && (
+    moduleName === '../Utilities/Platform' ||
+    moduleName === '../../Utilities/Platform' ||
+    moduleName === 'react-native/Libraries/Utilities/Platform' ||
+    moduleName === 'react-native/Utilities/Platform' ||
+    moduleName === './Platform'
+  )) {
+    return {
+      filePath: path.resolve(__dirname, 'app/utils/platform.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle AccessibilityInfo module for web
+  if (moduleName === '../Components/AccessibilityInfo/legacySendAccessibilityEvent' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'app/utils/accessibility.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle PlatformColorValueTypes module for web
+  if (moduleName === './PlatformColorValueTypes' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'app/utils/platform-color.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle RCTAlertManager module for web
+  if (moduleName === './RCTAlertManager' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'app/utils/alert-manager.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle RCTNetworking module for web
+  if (moduleName === './RCTNetworking' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'app/utils/networking.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle DevToolsSettingsManager module for web
+  if (moduleName === '../DevToolsSettings/DevToolsSettingsManager' && platform === 'web') {
+    return {
+      filePath: path.resolve(__dirname, 'node_modules/react-native/Libraries/Core/DevToolsSettings/DevToolsSettingsManager.web.js'),
+      type: 'sourceFile',
+    };
+  }
+
   return context.resolveRequest(context, moduleName, platform);
 };
 
