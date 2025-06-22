@@ -7,18 +7,29 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
-  Image,
   Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { account, databases, storage, ID, storageAPI } from '../../utils/appwrite';
 import { Property } from '../../types';
+import { RoomFeature } from '../utils/roomPlanningUtils';
+import RoomFeatureEditor from '../components/RoomFeatureEditor';
+import ImageUpload from '../components/ImageUpload';
+import { Picker } from '@react-native-picker/picker';
 
 const BUCKET_ID = '682b32c2003a04448deb';
 const DATABASE_ID = '68286dbc002bee374429';
 const COLLECTION_ID = '68286efe002e00dbe24d';
+
+const PROPERTY_TYPES = [
+  'Apartment',
+  'House',
+  'Villa',
+  'Studio',
+  'Duplex',
+  'Penthouse',
+];
 
 const styles = StyleSheet.create({
   container: {
@@ -131,6 +142,38 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  webSelect: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e1e4e8',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  picker: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e1e4e8',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  dimensionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: -8,
+  },
+  dimensionInput: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  dimensionLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
 });
 
 export default function NewPropertyScreen() {
@@ -141,6 +184,7 @@ export default function NewPropertyScreen() {
     description: '',
     location: '',
     price: '',
+    type: 'Apartment',
     beds: '0',
     baths: '0',
     guests: '0',
@@ -151,31 +195,12 @@ export default function NewPropertyScreen() {
       longitude: 0,
     },
     dimensions: {
-      width: 0,
-      length: 0,
-      height: 0,
+      width: 4,
+      length: 5,
+      height: 2.8,
     },
     features: [] as string[],
   });
-
-  const handleImagePick = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        console.log('Image picked:', result.assets[0]);
-        setForm(prev => ({ ...prev, image: result.assets[0] }));
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
 
   const handleSubmit = async () => {
     console.log('Starting form submission...');
@@ -242,23 +267,38 @@ export default function NewPropertyScreen() {
 
       console.log('File uploaded successfully:', uploadedFile);
 
+      // Get current user
+      const user = await account.get();
+      if (!user || !user.$id) {
+        throw new Error('User not logged in');
+      }
+
       // Create property document
-      const property: Partial<Property> = {
+      const property: any = {
         title: form.title,
         description: form.description,
         location: form.location,
         price: parseFloat(form.price),
-        imageId: uploadedFile.$id,
+        type: form.type,
+        imageUrl: uploadedFile.$id,
+        landlordId: user.$id,
         beds: parseInt(form.beds) || 0,
         baths: parseInt(form.baths) || 0,
         guests: parseInt(form.guests) || 0,
-        coordinates: form.coordinates,
-        dimensions: form.dimensions,
-        features: form.features,
         status: 'available',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+
+      // Only add dimensions if the field exists in schema (as string)
+      if (form.dimensions) {
+        property.dimensions = JSON.stringify(form.dimensions);
+      }
+
+      // Only add features if the field exists in schema (as string array)
+      if (form.features && form.features.length > 0) {
+        property.features = form.features;
+      }
 
       console.log('Creating property document...');
       const createdProperty = await databases.createDocument(
@@ -346,6 +386,100 @@ export default function NewPropertyScreen() {
           />
         </View>
 
+        {/* Property Type */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Property Type</Text>
+          {Platform.OS === 'web' ? (
+            <select
+              value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
+              style={styles.webSelect}
+            >
+              {PROPERTY_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Picker
+              selectedValue={form.type}
+              onValueChange={(value) => setForm({ ...form, type: value })}
+              style={styles.picker}
+            >
+              {PROPERTY_TYPES.map((type) => (
+                <Picker.Item key={type} label={type} value={type} />
+              ))}
+            </Picker>
+          )}
+        </View>
+
+        {/* Room Dimensions for 3D Model */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Room Dimensions (meters) - For 3D Model</Text>
+          <View style={styles.dimensionsRow}>
+            <View style={styles.dimensionInput}>
+              <Text style={styles.dimensionLabel}>Width</Text>
+              <TextInput
+                style={styles.input}
+                value={String(form.dimensions.width)}
+                onChangeText={(text) => {
+                  const width = parseFloat(text) || 0;
+                  setForm({
+                    ...form,
+                    dimensions: { ...form.dimensions, width },
+                  });
+                }}
+                keyboardType="numeric"
+                placeholder="4.0"
+              />
+            </View>
+
+            <View style={styles.dimensionInput}>
+              <Text style={styles.dimensionLabel}>Length</Text>
+              <TextInput
+                style={styles.input}
+                value={String(form.dimensions.length)}
+                onChangeText={(text) => {
+                  const length = parseFloat(text) || 0;
+                  setForm({
+                    ...form,
+                    dimensions: { ...form.dimensions, length },
+                  });
+                }}
+                keyboardType="numeric"
+                placeholder="5.0"
+              />
+            </View>
+
+            <View style={styles.dimensionInput}>
+              <Text style={styles.dimensionLabel}>Height</Text>
+              <TextInput
+                style={styles.input}
+                value={String(form.dimensions.height)}
+                onChangeText={(text) => {
+                  const height = parseFloat(text) || 0;
+                  setForm({
+                    ...form,
+                    dimensions: { ...form.dimensions, height },
+                  });
+                }}
+                keyboardType="numeric"
+                placeholder="2.8"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Room Features Editor for 3D Model */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Room Features (for 3D Model)</Text>
+          <RoomFeatureEditor
+            features={form.features as unknown as RoomFeature[]}
+            onChange={(features) => setForm({ ...form, features: features as unknown as string[] })}
+          />
+        </View>
+
         {/* Amenities */}
         <Text style={[styles.label, { marginBottom: 12 }]}>Amenities</Text>
         <View style={styles.amenitiesContainer}>
@@ -384,24 +518,11 @@ export default function NewPropertyScreen() {
         </View>
 
         {/* Image Upload */}
-        <View style={styles.imageUploadContainer}>
-          {form.image && (
-            <Image
-              source={{
-                uri: Platform.OS === 'web'
-                  ? URL.createObjectURL(form.image as File)
-                  : (form.image as ImagePickerAsset).uri,
-              }}
-              style={styles.uploadedImage}
-            />
-          )}
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={handleImagePick}
-          >
-            <Ionicons name="image" size={24} color="#fff" />
-            <Text style={styles.uploadButtonText}>Choose from Gallery</Text>
-          </TouchableOpacity>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Property Image *</Text>
+          <ImageUpload
+            onImageSelected={(image) => setForm({ ...form, image })}
+          />
         </View>
 
         {/* Submit Button */}

@@ -7,6 +7,7 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { databases, storage, account } from '../../utils/appwrite';
 import { useRouter } from 'expo-router';
 import WebPropertyMap from '../components/WebPropertyMap';
+import { Query } from 'appwrite';
 
 const DATABASE_ID = '68286dbc002bee374429';
 const COLLECTION_ID = '68286efe002e00dbe24d';
@@ -52,10 +53,9 @@ export default function ExploreScreen() {
         DATABASE_ID,
         COLLECTION_ID,
         [
-          // Add filters for available properties only
-          // Query.equal('status', 'Available'),
-          // Query.limit(PAGE_LIMIT),
-          // Query.offset(offset)
+          Query.equal('status', 'Available'),
+          Query.limit(PAGE_LIMIT),
+          Query.offset(offset)
         ]
       );
       

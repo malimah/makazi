@@ -40,14 +40,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     };
   }
 
-  // Handle react-native-appwrite on web
-  if (moduleName === 'react-native-appwrite' && platform === 'web') {
-    return {
-      filePath: path.resolve(__dirname, './react-native-appwrite-web-mock.js'),
-      type: 'sourceFile',
-    };
-  }
-
   // Handle Radix UI packages on web
   if (platform === 'web' && (
     moduleName === '@radix-ui/react-slot' ||
@@ -203,7 +195,7 @@ config.resolver.alias = {
   '@react-three/fiber': 'react-three-fiber-web-mock.js',
   '@react-spring/three': 'react-three-fiber-web-mock.js',
   // Mock react-native-appwrite for web
-  'react-native-appwrite': 'react-native-appwrite-web-mock.js',
+  // 'react-native-appwrite': 'react-native-appwrite-web-mock.js',
   // Mock Radix UI packages for web
   '@radix-ui/react-slot': 'radix-ui-web-mock.js',
   '@radix-ui/react-compose-refs': 'radix-ui-web-mock.js',

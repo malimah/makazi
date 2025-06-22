@@ -9,12 +9,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { account, databases, storage, ID, tenantsAPI, maintenanceAPI, paymentsAPI, analyticsAPI, Query, storageAPI } from '../../utils/appwrite';
 import { useRouter } from 'expo-router';
 import { Property, Tenant, MaintenanceRequest, Payment, Analytics } from '../../types';
-import PropertyList from '../components/PropertyList';
 import PropertySearch from '../components/PropertySearch';
 import PropertyAnalytics from '../components/PropertyAnalytics';
 import TenantAssignment from '../components/TenantAssignment';
 import MaintenanceRequests from '../components/MaintenanceRequests';
-import PropertyForm from '../components/PropertyForm';
 import { PropertyFilter } from '../components/PropertySearch';
 import PropertyMap from '../components/PropertyMap';
 import { RoomFeature } from '../utils/roomPlanningUtils';
@@ -428,6 +426,35 @@ const dashboardStyles = StyleSheet.create({
     fontWeight: 'bold', 
     fontSize: 13 
   },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e1e4e8',
+    borderRadius: 8,
+  },
+  actionButtonText: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1da1f2',
+  },
+  propertySummary: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 18,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: '#555',
+  },
 });
 
 interface PropertyFormData {
@@ -453,24 +480,6 @@ export default function LandlordDashboard() {
   const [user, setUser] = useState<any>(null);
   const [profileImageId, setProfileImageId] = useState<string | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<PropertyFormData>({
-    title: '',
-    location: '',
-    price: '',
-    description: '',
-    image: null,
-    dimensions: {
-      width: 4,
-      length: 5,
-      height: 2.8,
-    },
-    features: [],
-    coordinates: {
-      latitude: -6.776012,
-      longitude: 39.178326,
-    },
-  });
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
 
   const { width } = useWindowDimensions();
@@ -1009,24 +1018,7 @@ export default function LandlordDashboard() {
       };
 
       setProperties([...properties, newProperty]);
-      setForm({
-        title: '',
-        location: '',
-        price: '',
-        description: '',
-        image: null,
-        dimensions: {
-          width: 4,
-          length: 5,
-          height: 2.8,
-        },
-        features: [],
-        coordinates: {
-          latitude: -6.776012,
-          longitude: 39.178326,
-        },
-      });
-      setShowForm(false);
+      setSelectedPropertyId(newProperty.$id);
     } catch (error: any) {
       console.error('Error creating property:', error);
       Alert.alert('Error saving property', error.message || String(error));
@@ -1191,6 +1183,36 @@ export default function LandlordDashboard() {
 
           {/* Properties Section */}
           <Text style={dashboardStyles.subtitle}>Your Properties</Text>
+          
+          {/* Quick Property Actions */}
+          <View style={dashboardStyles.quickActions}>
+            <TouchableOpacity
+              style={dashboardStyles.actionButton}
+              onPress={() => router.push('/landlord-dashboard/my-property')}
+            >
+              <Ionicons name="home" size={24} color="#1da1f2" />
+              <Text style={dashboardStyles.actionButtonText}>Manage Properties</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={dashboardStyles.actionButton}
+              onPress={() => router.push('/landlord-dashboard/new-property')}
+            >
+              <Ionicons name="add-circle" size={24} color="#22c55e" />
+              <Text style={dashboardStyles.actionButtonText}>Add New Property</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Property Summary */}
+          <View style={dashboardStyles.propertySummary}>
+            <Text style={dashboardStyles.summaryText}>
+              You have {properties.length} properties total
+            </Text>
+            <Text style={dashboardStyles.summaryText}>
+              {properties.filter(p => p.status === 'Available').length} available • {properties.filter(p => p.status === 'Occupied').length} occupied
+            </Text>
+          </View>
+
           {/* PropertyMap temporarily disabled due to interface issues */}
           {/* <PropertyMap
             properties={properties}
@@ -1198,22 +1220,6 @@ export default function LandlordDashboard() {
               setSelectedPropertyId(property.$id);
             }}
           /> */}
-          {showForm ? (
-            <PropertyForm
-              onSubmit={handleAddProperty}
-              initialValues={form}
-            />
-          ) : (
-            <Button
-              title="Add New Property"
-              onPress={() => setShowForm(true)}
-            />
-          )}
-          <PropertyList
-            properties={properties}
-            onDelete={handleDeleteProperty}
-            getImageUri={getImageUri}
-          />
 
           {/* Upload Progress */}
           {uploadProgress && (

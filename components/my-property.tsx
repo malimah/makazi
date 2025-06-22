@@ -21,7 +21,7 @@ export default function MyProperty() {
         return databases.listDocuments(
           DATABASE_ID,
           COLLECTION_ID,
-          [Query.equal('userId', userId)]
+          [Query.equal('landlordId', userId)]
         );
       })
       .then(res => {

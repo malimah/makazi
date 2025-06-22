@@ -1,4 +1,5 @@
-// Mock implementation for react-native-appwrite on web
+// Mock implementation of react-native-appwrite for web environment
+// This provides a realistic simulation of Appwrite services for web development
 
 // Mock Client class
 export class Client {
@@ -16,87 +17,196 @@ export class Client {
     this.project = project;
     return this;
   }
+
+  setKey(key) {
+    this.key = key;
+    return this;
+  }
 }
 
 // Mock Account class
 export class Account {
   constructor(client) {
     this.client = client;
+    this.currentUser = null;
+    this.sessions = new Map();
+    
+    // Load existing user data from localStorage
+    this.loadUserData();
+  }
+
+  loadUserData() {
+    try {
+      const storedUser = localStorage.getItem('mock-appwrite-user');
+      if (storedUser) {
+        this.currentUser = JSON.parse(storedUser);
+      }
+      
+      const storedSessions = localStorage.getItem('mock-appwrite-sessions');
+      if (storedSessions) {
+        this.sessions = new Map(JSON.parse(storedSessions));
+      }
+    } catch (error) {
+      console.warn('Failed to load mock user data:', error);
+    }
+  }
+
+  saveUserData() {
+    try {
+      if (this.currentUser) {
+        localStorage.setItem('mock-appwrite-user', JSON.stringify(this.currentUser));
+      }
+      localStorage.setItem('mock-appwrite-sessions', JSON.stringify(Array.from(this.sessions.entries())));
+    } catch (error) {
+      console.warn('Failed to save mock user data:', error);
+    }
   }
 
   async create(userId, email, password, name) {
     console.log('Mock: Creating account for', email);
-    return {
+    
+    const user = {
       $id: userId,
       email,
       name,
-      prefs: {},
-      status: true,
-      registration: new Date().toISOString(),
-      emailVerification: false,
-      phoneVerification: false,
-    };
-  }
-
-  async createEmailPasswordSession(email, password) {
-    console.log('Mock: Creating email password session for', email);
-    return {
-      $id: 'mock-session-id',
-      userId: 'mock-user-id',
-      expire: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      provider: 'email',
-      providerUid: email,
-      current: true,
-    };
-  }
-
-  async getSession(sessionId = 'current') {
-    console.log('Mock: Getting session', sessionId);
-    if (sessionId === 'current') {
-      return {
-        $id: 'mock-session-id',
-        userId: 'mock-user-id',
-        expire: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        provider: 'email',
-        providerUid: 'mock@example.com',
-        current: true,
-      };
-    }
-    throw new Error('Session not found');
-  }
-
-  async get() {
-    console.log('Mock: Getting current user');
-    return {
-      $id: 'mock-user-id',
-      email: 'mock@example.com',
-      name: 'Mock User',
       prefs: { userType: 'landlord' },
       status: true,
       registration: new Date().toISOString(),
       emailVerification: true,
       phoneVerification: false,
     };
+    
+    this.currentUser = user;
+    this.saveUserData();
+    
+    return user;
+  }
+
+  async createEmailPasswordSession(email, password) {
+    console.log('Mock: Creating email password session for', email);
+    
+    // If no user exists, create a mock user
+    if (!this.currentUser) {
+      this.currentUser = {
+        $id: 'mock-user-' + Date.now(),
+        email: email,
+        name: email.split('@')[0], // Use email prefix as name
+        prefs: { userType: 'landlord' },
+        status: true,
+        registration: new Date().toISOString(),
+        emailVerification: true,
+        phoneVerification: false,
+      };
+      this.saveUserData();
+    }
+    
+    const session = {
+      $id: 'mock-session-' + Date.now(),
+      userId: this.currentUser.$id,
+      expire: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      provider: 'email',
+      providerUid: email,
+      current: true,
+    };
+    
+    this.sessions.set(session.$id, session);
+    this.saveUserData();
+    
+    return session;
+  }
+
+  async getSession(sessionId = 'current') {
+    console.log('Mock: Getting session', sessionId);
+    
+    if (sessionId === 'current') {
+      // Return the most recent session
+      const sessions = Array.from(this.sessions.values());
+      if (sessions.length > 0) {
+        return sessions[sessions.length - 1];
+      }
+    }
+    
+    const session = this.sessions.get(sessionId);
+    if (session) {
+      return session;
+    }
+    
+    throw new Error('Session not found');
+  }
+
+  async get() {
+    console.log('Mock: Getting current user');
+    
+    if (!this.currentUser) {
+      // Return a default user for development
+      this.currentUser = {
+        $id: 'mock-user-' + Date.now(),
+        email: 'developer@example.com',
+        name: 'Developer User',
+        prefs: { userType: 'landlord' },
+        status: true,
+        registration: new Date().toISOString(),
+        emailVerification: true,
+        phoneVerification: false,
+      };
+      this.saveUserData();
+    }
+    
+    return this.currentUser;
+  }
+
+  async updateName(name) {
+    console.log('Mock: Updating name to', name);
+    
+    if (this.currentUser) {
+      this.currentUser.name = name;
+      this.saveUserData();
+      return this.currentUser;
+    }
+    
+    throw new Error('No user logged in');
+  }
+
+  async updateEmail(email) {
+    console.log('Mock: Updating email to', email);
+    
+    if (this.currentUser) {
+      this.currentUser.email = email;
+      this.saveUserData();
+      return this.currentUser;
+    }
+    
+    throw new Error('No user logged in');
+  }
+
+  async updatePrefs(prefs) {
+    console.log('Mock: Updating prefs', prefs);
+    
+    if (this.currentUser) {
+      this.currentUser.prefs = { ...this.currentUser.prefs, ...prefs };
+      this.saveUserData();
+      return this.currentUser;
+    }
+    
+    throw new Error('No user logged in');
   }
 
   async deleteSession(sessionId) {
     console.log('Mock: Deleting session', sessionId);
+    this.sessions.delete(sessionId);
+    this.saveUserData();
     return {};
   }
 
-  async updateEmail() {
-    return Promise.resolve({});
-  }
-
-  async updatePassword() {
-    return Promise.resolve({});
-  }
-
-  async updateName() {
-    return Promise.resolve({});
-  }
-
   async deleteSessions() {
+    console.log('Mock: Deleting all sessions');
+    this.sessions.clear();
+    this.saveUserData();
+    return {};
+  }
+
+  // Other methods that return empty promises
+  async updatePassword() {
     return Promise.resolve({});
   }
 
@@ -141,11 +251,11 @@ export class Account {
   }
 
   async getPrefs() {
-    return Promise.resolve({});
+    return Promise.resolve(this.currentUser?.prefs || {});
   }
 
   async getSessions() {
-    return Promise.resolve([]);
+    return Promise.resolve(Array.from(this.sessions.values()));
   }
 
   async listIdentities() {
@@ -153,11 +263,7 @@ export class Account {
   }
 
   async listSessions() {
-    return Promise.resolve([]);
-  }
-
-  async updatePrefs() {
-    return Promise.resolve({});
+    return Promise.resolve(Array.from(this.sessions.values()));
   }
 
   async updatePhone() {
@@ -332,4 +438,62 @@ export default {
   Models,
   AppwriteProvider,
   useAppwrite,
-}; 
+};
+
+// Utility function to clear mock data (useful for testing)
+export const clearMockData = () => {
+  try {
+    localStorage.removeItem('mock-appwrite-user');
+    localStorage.removeItem('mock-appwrite-sessions');
+    console.log('Mock data cleared');
+  } catch (error) {
+    console.warn('Failed to clear mock data:', error);
+  }
+};
+
+// Utility function to set mock user data (useful for testing)
+export const setMockUser = (userData) => {
+  try {
+    localStorage.setItem('mock-appwrite-user', JSON.stringify(userData));
+    console.log('Mock user data set:', userData);
+  } catch (error) {
+    console.warn('Failed to set mock user data:', error);
+  }
+};
+
+// Development helper for testing different user scenarios
+if (typeof window !== 'undefined') {
+  window.mockAppwrite = {
+    clearData: clearMockData,
+    setUser: setMockUser,
+    createTestUser: (name = 'Test User', email = 'test@example.com') => {
+      const userData = {
+        $id: 'test-user-' + Date.now(),
+        email: email,
+        name: name,
+        prefs: { userType: 'landlord' },
+        status: true,
+        registration: new Date().toISOString(),
+        emailVerification: true,
+        phoneVerification: false,
+      };
+      setMockUser(userData);
+      return userData;
+    },
+    getCurrentUser: () => {
+      try {
+        const storedUser = localStorage.getItem('mock-appwrite-user');
+        return storedUser ? JSON.parse(storedUser) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+  };
+  
+  console.log('Mock Appwrite development helpers available at window.mockAppwrite');
+  console.log('Usage:');
+  console.log('- window.mockAppwrite.clearData() - Clear all mock data');
+  console.log('- window.mockAppwrite.setUser(userData) - Set specific user data');
+  console.log('- window.mockAppwrite.createTestUser("John Doe", "john@example.com") - Create test user');
+  console.log('- window.mockAppwrite.getCurrentUser() - Get current mock user');
+} 
