@@ -1,12 +1,17 @@
 import { Property } from '../../types';
 
-// Export the types that both implementations need
-export interface PropertyMapProps {
-  properties: Property[];
-  onMarkerPress?: (property: Property) => void;
-}
+/**
+ * PropertyMap component props
+ * @typedef {Object} PropertyMapProps
+ * @property {Property[]} properties - Array of properties to display
+ * @property {function(Property): void} [onMarkerPress] - Callback when marker is pressed
+ */
 
-// Fallback for platforms where PropertyMap is not implemented
-export default function PropertyMap() {
+/**
+ * Fallback PropertyMap component for platforms where it's not implemented
+ * @param {PropertyMapProps} props - Component props
+ * @returns {null} Returns null as fallback
+ */
+export default function PropertyMap(props) {
   return null;
 }

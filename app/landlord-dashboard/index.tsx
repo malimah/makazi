@@ -17,10 +17,6 @@ import MaintenanceRequests from '../components/MaintenanceRequests';
 import PropertyForm from '../components/PropertyForm';
 import { PropertyFilter } from '../components/PropertySearch';
 import PropertyMap from '../components/PropertyMap';
-<<<<<<< HEAD
-import WebPropertyMap from '../components/WebPropertyMap';
-=======
->>>>>>> 7d4c60d015541a4f25748aad69741d4a011bf74c
 import { RoomFeature } from '../utils/roomPlanningUtils';
 import { sortPropertiesByDistance } from '../../utils/distance';
 import UploadProgress from '../components/UploadProgress';
@@ -1195,30 +1191,13 @@ export default function LandlordDashboard() {
 
           {/* Properties Section */}
           <Text style={dashboardStyles.subtitle}>Your Properties</Text>
-<<<<<<< HEAD
-          {Platform.OS === 'web' ? (
-            <WebPropertyMap
-              properties={properties}
-              onMarkerPress={(property) => {
-                setSelectedPropertyId(property.$id);
-              }}
-            />
-          ) : (
-            <PropertyMap
-              properties={properties}
-              onMarkerPress={(property) => {
-                setSelectedPropertyId(property.$id);
-              }}
-            />
-          )}
-=======
-          <PropertyMap
+          {/* PropertyMap temporarily disabled due to interface issues */}
+          {/* <PropertyMap
             properties={properties}
             onMarkerPress={(property) => {
               setSelectedPropertyId(property.$id);
             }}
-          />
->>>>>>> 7d4c60d015541a4f25748aad69741d4a011bf74c
+          /> */}
           {showForm ? (
             <PropertyForm
               onSubmit={handleAddProperty}
