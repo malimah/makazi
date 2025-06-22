@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+ 
+=======
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -49,3 +52,4 @@ const styles = StyleSheet.create({
 });
 
 export default UploadProgress; 
+>>>>>>> 7d4c60d015541a4f25748aad69741d4a011bf74c

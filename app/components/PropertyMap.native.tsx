@@ -58,4 +58,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PropertyMap; 
+export default PropertyMap;
